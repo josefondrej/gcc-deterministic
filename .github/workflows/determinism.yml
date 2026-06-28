@@ -1,0 +1,26 @@
+name: gcc-determinism
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  determinism:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: gcc --version
+
+      - name: Run 10x determinism test
+        run: bash run_determinism_test.sh
+
+      - name: Upload divergence report (only on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: divergence-report
+          path: out/divergence_report.txt
+          if-no-files-found: ignore
