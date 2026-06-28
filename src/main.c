@@ -1,3 +1,20 @@
+/*
+ * main.c — driver for the sample program under determinism test.
+ *
+ * The program is a small arithmetic expression evaluator. It:
+ *   1. Builds a symbol table (symtab) binding the variables pi, e and r.
+ *   2. Evaluates a fixed list of expressions, each parsed and computed by a
+ *      recursive-descent parser (parser) over a hand-written tokenizer (lexer).
+ *      It handles + - * /, right-associative ^, parentheses, named variables,
+ *      and reports division-by-zero and parse errors instead of crashing.
+ *   3. Collects the successful results in a growable array (vec) and reduces
+ *      them to a sum and a max via a function pointer.
+ *   4. Prints a table of factorials 1..10 using a plain recursive function.
+ *
+ * It takes no input and always produces the same output — exactly the kind of
+ * deterministic, multi-module workload this repo recompiles 10x to check that
+ * GCC emits byte-for-byte identical binaries.
+ */
 #include "vec.h"
 #include "symtab.h"
 #include "parser.h"
