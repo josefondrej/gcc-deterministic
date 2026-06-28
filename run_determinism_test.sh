@@ -51,43 +51,53 @@ export LANG=C
 #   -Wdate-time        warns if anything reintroduces a wall-clock dependency.
 # ---------------------------------------------------------------------------
 CFLAGS=(
-    -std=c11
-    -O2
-    -g
-    -pipe
-    -fno-common
-    -fstack-protector-strong
-    -fstack-clash-protection
-    -fcf-protection=full
-    -fPIE
-    -fasynchronous-unwind-tables
-    -funwind-tables
-    -grecord-gcc-switches
-    -D_FORTIFY_SOURCE=2
-    -Wall
-    -Wextra
-    -Wpedantic
-    -Wshadow
-    -Wcast-qual
-    -Wwrite-strings
-    -Wstrict-prototypes
-    -Wmissing-prototypes
-    -Wredundant-decls
-    -Wpointer-arith
-    -Wformat=2
-    -Wundef
-    -Wdate-time
+    # --- Language / code generation ---
+    -std=c11                  # compile to the ISO C11 standard, no GNU extensions
+    -O2                       # full optimization (a realistic, stressing build)
+    -g                        # emit DWARF debug info (where path/time leaks would show)
+    -pipe                     # pass data between compiler stages via pipes, not temp files
+    -fno-common               # put uninitialized globals in .bss, not a common block
+                              #   (catches accidental duplicate definitions)
+
+    # --- Hardening (defensive code generation) ---
+    -fstack-protector-strong  # insert stack canaries on functions with buffers/locals
+    -fstack-clash-protection  # probe the stack as it grows to defeat stack-clash attacks
+    -fcf-protection=full      # emit Intel CET landing pads (control-flow integrity)
+    -fPIE                     # position-independent code, prerequisite for a PIE binary (ASLR)
+    -fasynchronous-unwind-tables # unwind tables valid at every instruction (good backtraces)
+    -funwind-tables           # generate unwind tables even for non-exception code
+    -grecord-gcc-switches     # record this exact flag list *into* the object's debug info
+    -D_FORTIFY_SOURCE=2       # add compile/runtime checks to memcpy/sprintf/etc. (needs -O>=1)
+
+    # --- Warnings (don't change the binary, but exercise the front end thoroughly) ---
+    -Wall                     # the common, almost-always-useful warning set
+    -Wextra                   # additional warnings beyond -Wall
+    -Wpedantic                # warn on anything outside strict ISO C
+    -Wshadow                  # warn when a local variable shadows another
+    -Wcast-qual               # warn when a cast drops a 'const'/'volatile' qualifier
+    -Wwrite-strings           # give string literals 'const char[]' type so writes warn
+    -Wstrict-prototypes       # warn on old-style () function declarations
+    -Wmissing-prototypes      # warn on a global function with no prior prototype
+    -Wredundant-decls         # warn when something is declared more than once
+    -Wpointer-arith           # warn on arithmetic on 'void *' / function pointers
+    -Wformat=2                # strict printf/scanf format-string checking
+    -Wundef                   # warn when an undefined macro is used in an #if
+    -Wdate-time               # warn if __DATE__/__TIME__/__TIMESTAMP__ are used
+                              #   (would reintroduce a wall-clock dependency)
 )
 
 REPRO_COMMON=(
+    # Rewrite the absolute build directory to "." everywhere it gets embedded
+    # (__FILE__, DWARF debug paths, assert strings) so the output doesn't depend
+    # on where the repo happens to live on disk.
     "-ffile-prefix-map=${ROOT}=."
 )
 
 LDFLAGS=(
-    -pie
-    -Wl,-z,relro
-    -Wl,-z,now
-    -lm
+    -pie                      # produce a position-independent executable (full ASLR)
+    -Wl,-z,relro              # make the GOT/relocations read-only after startup
+    -Wl,-z,now                # resolve all symbols at load time (pairs with relro)
+    -lm                       # link libm: parser.c uses pow() for the '^' operator
 )
 
 # ---------------------------------------------------------------------------
